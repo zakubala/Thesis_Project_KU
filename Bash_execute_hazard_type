@@ -1,42 +1,51 @@
 import os
 import subprocess
-from Scalgo_bbox import get_raster_bbox_wgs84
 import geopandas as gpd
+from Scalgo_bbox import get_raster_bbox_wgs84
+from cleaning_streets import clean_streets_gdf
 
-hazard_type = {"flood", "snow"}
 
-
-def hazard_choice(hazard_type):
+def hazard_choice(hazard_type: str):
     if hazard_type == "flood":
         scalgo_raster_path = (
             "Scalgo Data/Terrain_Buildings_Wrocław_Water_depth_Rain=7_24_m.tif"
         )
+        output_vector_path = "Output files cached/wroclaw_streets.gpkg"
 
-        min_lon, min_lat, max_lon, max_lat = get_raster_bbox_wgs84(scalgo_raster_path)
-
-        if not os.path.exists("Output files cached/wroclaw_streets.gpkg"):
-            subprocess.call(
+        if not os.path.exists(output_vector_path):
+            min_lon, min_lat, max_lon, max_lat = get_raster_bbox_wgs84(
+                scalgo_raster_path
+            )
+            subprocess.run(
                 [
-                    "sh",
+                    "bash",
                     "Bash Scripts/wroclaw_streets_bash.sh",
                     str(min_lon),
                     str(min_lat),
                     str(max_lon),
                     str(max_lat),
-                ]
+                ],
+                check=True,
             )
-            output_vector_path = "C:/downloads/wroclaw_streets.gpkg"
-            gdf_edges = gpd.read_file(output_vector_path, layer="streets")
-            return scalgo_raster_path, output_vector_path
+
+        gdf_edges = gpd.read_file(output_vector_path, layer="streets")
+        gdf_edges = clean_streets_gdf(gdf_edges, hazard_type="flood")
+        return gdf_edges, scalgo_raster_path
 
     elif hazard_type == "snow":
-        scalgo_raster_path = (
-            "not applicable for snow hazards"  # Placeholder for snow hazard raster path
-        )
-        if not os.path.exists("Output files cached/syracuse_streets.gpkg"):
-            subprocess.call(["sh", "Bash Scripts/syracuse_streets_bash.sh"])
-            output_vector_path = "Output files cached/syracuse_streets.gpkg"
-            gdf_edges = gpd.read_file(output_vector_path, layer="streets")
-            return output_vector_path, scalgo_raster_path
+        scalgo_raster_path = "not applicable for snow hazards - assume snow collects uniformly on all roads"
+        output_vector_path = "Output files cached/syracuse_streets.gpkg"
+
+        if not os.path.exists(output_vector_path):
+            syracuse_bbox = ["-76.49", "42.77", "-75.89", "43.27"]
+            subprocess.run(
+                ["bash", "Bash Scripts/syracuse_streets_bash.sh", *syracuse_bbox],
+                check=True,
+            )
+
+        gdf_edges = gpd.read_file(output_vector_path, layer="streets")
+        gdf_edges = clean_streets_gdf(gdf_edges, hazard_type="snow")
+        return gdf_edges, scalgo_raster_path
+
     else:
         raise ValueError("Invalid hazard type. Choose 'flood' or 'snow'.")
