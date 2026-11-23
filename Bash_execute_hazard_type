@@ -1,0 +1,42 @@
+import os
+import subprocess
+from Scalgo_bbox import get_raster_bbox_wgs84
+import geopandas as gpd
+
+hazard_type = {"flood", "snow"}
+
+
+def hazard_choice(hazard_type):
+    if hazard_type == "flood":
+        scalgo_raster_path = (
+            "Scalgo Data/Terrain_Buildings_Wrocław_Water_depth_Rain=7_24_m.tif"
+        )
+
+        min_lon, min_lat, max_lon, max_lat = get_raster_bbox_wgs84(scalgo_raster_path)
+
+        if not os.path.exists("Output files cached/wroclaw_streets.gpkg"):
+            subprocess.call(
+                [
+                    "sh",
+                    "Bash Scripts/wroclaw_streets_bash.sh",
+                    str(min_lon),
+                    str(min_lat),
+                    str(max_lon),
+                    str(max_lat),
+                ]
+            )
+            output_vector_path = "C:/downloads/wroclaw_streets.gpkg"
+            gdf_edges = gpd.read_file(output_vector_path, layer="streets")
+            return scalgo_raster_path, output_vector_path
+
+    elif hazard_type == "snow":
+        scalgo_raster_path = (
+            "not applicable for snow hazards"  # Placeholder for snow hazard raster path
+        )
+        if not os.path.exists("Output files cached/syracuse_streets.gpkg"):
+            subprocess.call(["sh", "Bash Scripts/syracuse_streets_bash.sh"])
+            output_vector_path = "Output files cached/syracuse_streets.gpkg"
+            gdf_edges = gpd.read_file(output_vector_path, layer="streets")
+            return output_vector_path, scalgo_raster_path
+    else:
+        raise ValueError("Invalid hazard type. Choose 'flood' or 'snow'.")
