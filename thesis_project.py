@@ -6,28 +6,19 @@ import geopandas as gpd
 import osmnx as ox
 import networkx as nx
 import rasterio
-from rasterio.warp import transform_bounds
+import os
 from rasterio.windows import from_bounds
 from rasterio.plot import plotting_extent
 from shapely.geometry import Point, LineString
 import matplotlib.pyplot as plt
-
-hazard_type = {"flood", "snow"}
-
-def hazard_choice(hazard_type):
-scalgo_raster = "Data/Terrain_Buildings_Wrocław_Water_depth_Rain=7_24_m.tif"
-output_vector_path = "Data/wroclaw_streets_utm32n.geojson"
-
-print(
-    f"WGS84 BBox to put in bash script for streets: {min_lon:.4f},{min_lat:.4f},{max_lon:.4f},{max_lat:.4f}"
-)
+import subprocess
 
 gdf_edges = gpd.read_file("Data/wroclaw_streets.gpkg", layer="streets")
 print(f"Loaded {len(gdf_edges)} street segments.")
 print(gdf_edges[["highway", "name", "geometry"]].head())
 
 # %% 3. Sample Water Depth in Native Raster CRS
-with rasterio.open(scalgo_raster) as src:
+with rasterio.open(scalgo_raster_path) as src:
     edges_native = gdf_edges.to_crs(src.crs)
     coords = [(geom.centroid.x, geom.centroid.y) for geom in edges_native.geometry]
     raw_depths = [val[0] for val in src.sample(coords)]
@@ -54,7 +45,7 @@ edges_to_save.to_file(output_vector_path, driver="GeoJSON")
 print(f"Saved metric road network to: {output_vector_path}")
 
 # %% 4. Visual Verification (Cropped Overlay)
-with rasterio.open(scalgo_raster) as src:
+with rasterio.open(scalgo_raster_path) as src:
     streets_plot = edges_utm.to_crs(src.crs)
 
     buffer = 100
