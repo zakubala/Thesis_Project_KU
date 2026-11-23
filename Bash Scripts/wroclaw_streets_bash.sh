@@ -7,6 +7,7 @@ MAX_LON="$3"
 MAX_LAT="$4"
 
 BBOX="${MIN_LON},${MIN_LAT},${MAX_LON},${MAX_LAT}"
+
 PBF_URL="https://download.geofabrik.de/europe/poland/dolnoslaskie-latest.osm.pbf"
 OUTPUT_GPKG="Output files cached/wroclaw_streets.gpkg"
 
@@ -18,9 +19,9 @@ osmium extract --bbox "$BBOX" dolnoslaskie.osm.pbf -o wroclaw.osm.pbf --overwrit
 
 echo "3. Extracting street network lines using ogr2ogr..."
 mkdir -p "Output files cached"
-ogr2ogr -f GPKG "$OUTPUT_GPKG" wroclaw.osm.pbf \
+ogr2ogr -f GPKG "$OUTPUT_GPKG" onondaga_county.osm.pbf \
     lines \
-    -where "highway IS NOT NULL" \
+    -where "highway IS NOT NULL AND highway NOT IN ('path','footway','pedestrian','steps','proposed','cycleway','elevator','track','platform','rest_area')" \
     -nln streets
 
 echo "4. Cleaning up intermediate files..."
