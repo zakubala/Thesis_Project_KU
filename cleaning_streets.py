@@ -12,21 +12,6 @@ def clean_streets_gdf(
     existing_dropcols = [col for col in dropcols if col in gdf.columns]
     gdf = gdf.drop(columns=existing_dropcols)
 
-    # 2. Filter out non-drivable highway types
-    drop_surfaces = [
-        "path",
-        "footway",
-        "pedestrian",
-        "steps",
-        "proposed",
-        "cycleway",
-        "elevator",
-        "track",
-        "platform",
-        "rest_area",
-    ]
-    gdf = gdf[~gdf["highway"].isin(drop_surfaces)].copy()
-
     # 3. Extract tags from other_tags (GDAL hstore format)
     if "other_tags" in gdf.columns:
         gdf["maxspeed"] = gdf["other_tags"].str.extract(r'"maxspeed"=>"([^"]+)"')
