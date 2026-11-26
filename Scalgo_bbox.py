@@ -4,7 +4,7 @@ from rasterio.warp import transform_bounds
 
 def get_raster_bbox_wgs84(raster_path):
     """
-    Get the bounding box of a raster in WGS84 coordinates.
+    Get the bounding box of Scalgo raster in WGS84 coordinates.
 
     Parameters:
     raster_path (str): Path to the raster file.

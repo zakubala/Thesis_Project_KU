@@ -12,28 +12,11 @@ from rasterio.plot import plotting_extent
 from shapely.geometry import Point, LineString
 import matplotlib.pyplot as plt
 import subprocess
+from Bash_execute_hazard_type import hazard_choice
 
-gdf_edges = gpd.read_file("Data/wroclaw_streets.gpkg", layer="streets")
-print(f"Loaded {len(gdf_edges)} street segments.")
-print(gdf_edges[["highway", "name", "geometry"]].head())
+edges_syr, raster_path_syr = hazard_choice("snow")
+edges_wro, raster_path_wro = hazard_choice("flood")
 
-# %% 3. Sample Water Depth in Native Raster CRS
-with rasterio.open(scalgo_raster_path) as src:
-    edges_native = gdf_edges.to_crs(src.crs)
-    coords = [(geom.centroid.x, geom.centroid.y) for geom in edges_native.geometry]
-    raw_depths = [val[0] for val in src.sample(coords)]
-
-    gdf_edges["water_depth_m"] = [
-        (
-            0.0
-            if (np.isclose(v, nodata_val, atol=1e4) or v < 0.0 or np.isnan(v))
-            else float(v)
-        )
-        for v in raw_depths
-    ]
-
-# Project to metric UTM for A* routing
-edges_utm = gdf_edges.to_crs("EPSG:32632")
 
 # Flatten list-type columns so GDAL can write to GeoJSON cleanly
 edges_to_save = edges_utm.copy()
